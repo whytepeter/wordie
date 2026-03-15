@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="c"><rect width="512" height="512" rx="110" ry="110"/></clipPath>
+    <radialGradient id="g" cx="78%" cy="10%" r="58%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#8B7FFA" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#8B7FFA" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#13111F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="512" height="512" fill="#13111F"/>
+    <rect width="512" height="512" fill="url(#g)"/>
+    <text x="264" y="360"
+      font-family="Fraunces, 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif"
+      font-size="310"
+      font-style="italic"
+      font-weight="300"
+      fill="#8B7FFA"
+      text-anchor="middle">W</text>
+  </g>
+  <rect width="512" height="512" rx="110" ry="110" fill="none" stroke="#8B7FFA" stroke-opacity="0.15" stroke-width="2"/>
+</svg>
