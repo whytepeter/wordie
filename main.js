@@ -796,6 +796,7 @@ document.addEventListener(
     }
     setTimeout(() => {
       card.style.transition = "";
+      _didSwipe = false;
     }, 240);
   },
   { passive: true }
