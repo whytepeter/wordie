@@ -31,7 +31,7 @@
   --rose: #f472b6;
   --rsoft: rgba(244, 114, 182, 0.12);
   --tabh: 68px;
-  --safe: env(safe-area-inset-bottom, 0px);
+  --safe: 4px;
   --tabbar-bg: rgba(13, 11, 26, 0.94);
 }
 
