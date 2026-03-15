@@ -756,7 +756,11 @@ document.addEventListener(
       swipingCard = null;
       return;
     }
-    if (Math.abs(dx) > 8) _didSwipe = true;
+    if (Math.abs(dx) > 8) {
+      _didSwipe = true;
+      const wrap = swipingCard.closest(".swipe-wrap");
+      if (wrap) wrap.classList.add("swiping");
+    }
     if (dx > 0 && swipeOpen === swipingCard) {
       swipingCard.style.transform = `translateX(-${Math.max(
         0,
@@ -787,6 +791,8 @@ document.addEventListener(
     } else {
       card.style.transform = "translateX(0)";
       if (swipeOpen === card) swipeOpen = null;
+      const wrap = card.closest(".swipe-wrap");
+      if (wrap) setTimeout(() => wrap.classList.remove("swiping"), 220);
     }
     setTimeout(() => {
       card.style.transition = "";
@@ -806,6 +812,8 @@ function closeSwipe(card) {
   if (!card) return;
   card.style.transition = "transform 0.2s cubic-bezier(.4,0,.2,1)";
   card.style.transform = "translateX(0)";
+  const wrap = card.closest(".swipe-wrap");
+  if (wrap) setTimeout(() => wrap.classList.remove("swiping"), 200);
   setTimeout(() => {
     card.style.transition = "";
   }, 220);

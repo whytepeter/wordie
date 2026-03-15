@@ -494,12 +494,15 @@ body.light .topbar.scrolled {
   overflow: visible;
 }
 
-/* swipe-wrap: coral background, card slides over it */
+/* swipe-wrap: no background at rest, coral revealed on swipe via JS */
 .swipe-wrap {
   position: relative;
   border-radius: 18px;
-  background: var(--coral);
+  background: transparent;
   overflow: hidden;
+}
+.swipe-wrap.swiping {
+  background: var(--coral);
 }
 .swipe-del-btn {
   position: absolute;
@@ -1598,6 +1601,14 @@ body.light .topbar.scrolled {
   max-width: 380px;
   animation: fadeUp 0.3s ease;
 }
+.onboard-logo-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  display: block;
+}
+
 .onboard-logo {
   font-family: "Fraunces", serif;
   font-style: italic;
