@@ -296,8 +296,19 @@ function toggleCard(id) {
   const body = document.getElementById("card-body-" + id);
   const arrow = document.getElementById("card-arrow-" + id);
   if (!body) return;
-  const open = body.classList.toggle("card-body-open");
-  if (arrow) arrow.style.transform = open ? "rotate(180deg)" : "rotate(0deg)";
+  const isOpen = body.classList.contains("card-body-open");
+  // collapse all open cards first
+  document.querySelectorAll(".card-body-open").forEach((el) => {
+    el.classList.remove("card-body-open");
+    const otherId = el.id.replace("card-body-", "");
+    const otherArrow = document.getElementById("card-arrow-" + otherId);
+    if (otherArrow) otherArrow.style.transform = "rotate(0deg)";
+  });
+  // if it wasn't open, open it now
+  if (!isOpen) {
+    body.classList.add("card-body-open");
+    if (arrow) arrow.style.transform = "rotate(180deg)";
+  }
 }
 
 function buildCard(w, showDel) {
