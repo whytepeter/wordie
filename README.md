@@ -25,25 +25,3 @@ wordie/
 ├── icon-192.png    # PWA icon
 └── icon-512.png    # PWA icon
 ```
-
-## Deploy to GitHub Pages
-
-```bash
-git init
-git add .
-git commit -m "init: Wordie"
-git remote add origin https://github.com/YOUR_USERNAME/wordie.git
-git push -u origin main
-```
-
-Then go to **Settings → Pages → Source: main / root**.
-
-> If your repo is at a sub-path (e.g. `github.io/wordie`), update `"start_url"` in `manifest.json` to `"/wordie/"`.
-
-## Updating after deploy
-
-Open the app → **Settings tab** → tap **Update** to unregister the service worker and reload with the latest version.
-
-## Data
-
-All words are stored in `localStorage` under the key `wordie_v2`. Nothing is sent to any server.
