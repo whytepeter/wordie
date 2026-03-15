@@ -88,9 +88,19 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(13, 11, 26, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: background 0.25s ease, backdrop-filter 0.25s ease;
+}
+.topbar.scrolled {
+  background: rgba(13, 11, 26, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+}
+body.light .topbar.scrolled {
+  background: rgba(244, 242, 255, 0.82);
 }
 .app-label {
   font-size: 11px;

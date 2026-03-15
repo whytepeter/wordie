@@ -872,6 +872,19 @@ function checkForUpdate() {
   });
 }
 
+// ── STICKY HEADER BLUR ─────────────────────────────────────────────────────
+document.querySelectorAll(".screen").forEach((screen) => {
+  screen.addEventListener(
+    "scroll",
+    () => {
+      const topbar = screen.querySelector(".topbar");
+      if (!topbar) return;
+      topbar.classList.toggle("scrolled", screen.scrollTop > 10);
+    },
+    { passive: true }
+  );
+});
+
 // ── INIT ───────────────────────────────────────────────────────────────────
 renderToday();
 
