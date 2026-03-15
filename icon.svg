@@ -10,13 +10,17 @@
   <g clip-path="url(#c)">
     <rect width="512" height="512" fill="#13111F"/>
     <rect width="512" height="512" fill="url(#g)"/>
-    <text x="264" y="360"
-      font-family="Fraunces, 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif"
-      font-size="310"
-      font-style="italic"
-      font-weight="300"
-      fill="#8B7FFA"
-      text-anchor="middle">W</text>
+    <!-- W as vector strokes, slightly italic -->
+    <g fill="#8B7FFA" stroke="none">
+      <!-- left outer leg: top-left to bottom-left -->
+      <polygon points="161,159 193,159 234,353 202,353"/>
+      <!-- left inner leg: bottom-left up to middle valley -->
+      <polygon points="202,353 234,353 268,228 236,228"/>
+      <!-- right inner leg: middle valley down to bottom-right -->
+      <polygon points="236,228 268,228 302,353 270,353"/>
+      <!-- right outer leg: bottom-right to top-right -->
+      <polygon points="270,353 302,353 343,159 311,159"/>
+    </g>
   </g>
   <rect width="512" height="512" rx="110" ry="110" fill="none" stroke="#8B7FFA" stroke-opacity="0.15" stroke-width="2"/>
 </svg>
