@@ -350,15 +350,6 @@ function renderLibrary() {
   showFab();
 }
 
-function clearSearch() {
-  const inp = document.getElementById("searchInput");
-  if (inp) {
-    inp.value = "";
-    inp.focus();
-  }
-  renderLibrary();
-}
-
 function dateLabel(ds) {
   const t = todayKey();
   const y = new Date();
@@ -374,31 +365,38 @@ function dateLabel(ds) {
 }
 
 // ── COLLAPSIBLE CARD ───────────────────────────────────────────────────────
-function toggleCard(id) {
-  const body = document.getElementById("card-body-" + id);
-  const arrow = document.getElementById("card-arrow-" + id);
+function toggleCard(cardEl) {
+  if (!cardEl) return;
+  const body = cardEl.querySelector(".card-body");
+  const arrow = cardEl.querySelector(".card-arrow");
   if (!body) return;
+
   const isOpen = body.classList.contains("card-body-open");
-  document.querySelectorAll(".card-body-open").forEach((el) => {
+  const scope = cardEl.closest(".screen") || document;
+  scope.querySelectorAll(".card-body-open").forEach((el) => {
     el.classList.remove("card-body-open");
-    const oArrow = document.getElementById(
-      "card-arrow-" + el.id.replace("card-body-", "")
-    );
-    if (oArrow) oArrow.style.transform = "rotate(0deg)";
+    const openCard = el.closest(".wcard");
+    const openArrow = openCard?.querySelector(".card-arrow");
+    if (openArrow) openArrow.style.transform = "rotate(0deg)";
   });
+
   if (!isOpen) {
     body.classList.add("card-body-open");
     if (arrow) arrow.style.transform = "rotate(180deg)";
   }
 }
 
-let _didSwipe = false;
+let _didSwipeMove = false;
+
 function handleCardTap(e, id) {
-  if (_didSwipe) {
-    _didSwipe = false;
+  if (
+    e.target.closest(".audio-btn") ||
+    e.target.closest(".swipe-del-btn") ||
+    e.target.closest(".card-body")
+  )
     return;
-  }
-  toggleCard(id);
+  if (_didSwipeMove) return;
+  toggleCard(e.currentTarget);
 }
 
 function buildCard(w, showDel) {
@@ -726,7 +724,7 @@ let swipeStartX = 0,
   swipeStartY = 0,
   swipingCard = null,
   swipeOpen = null;
-const SWIPE_THRESHOLD = 60,
+const SWIPE_THRESHOLD = 55,
   DELETE_BTN_W = 72;
 
 document.addEventListener(
@@ -741,7 +739,7 @@ document.addEventListener(
     swipeStartX = e.touches[0].clientX;
     swipeStartY = e.touches[0].clientY;
     swipingCard = card;
-    _didSwipe = false;
+    _didSwipeMove = false;
   },
   { passive: true }
 );
@@ -750,14 +748,15 @@ document.addEventListener(
   "touchmove",
   (e) => {
     if (!swipingCard) return;
-    const dx = e.touches[0].clientX - swipeStartX,
-      dy = e.touches[0].clientY - swipeStartY;
+    const dx = e.touches[0].clientX - swipeStartX;
+    const dy = e.touches[0].clientY - swipeStartY;
     if (Math.abs(dy) > Math.abs(dx) + 8) {
       swipingCard = null;
+      _didSwipeMove = false;
       return;
     }
     if (Math.abs(dx) > 8) {
-      _didSwipe = true;
+      _didSwipeMove = true;
       const wrap = swipingCard.closest(".swipe-wrap");
       if (wrap) wrap.classList.add("swiping");
     }
@@ -781,23 +780,33 @@ document.addEventListener(
   "touchend",
   (e) => {
     if (!swipingCard) return;
-    const dx = e.changedTouches[0].clientX - swipeStartX,
-      card = swipingCard;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const card = swipingCard;
     swipingCard = null;
+
+    if (!_didSwipeMove) {
+      // Pure tap — let onclick handle it
+      return;
+    }
+
+    // Was a real swipe — animate to final position
     card.style.transition = "transform 0.22s cubic-bezier(.4,0,.2,1)";
     if (dx < -SWIPE_THRESHOLD) {
       card.style.transform = `translateX(-${DELETE_BTN_W}px)`;
       swipeOpen = card;
     } else {
+      // Swipe didn't cross threshold — snap back and treat as a tap
       card.style.transform = "translateX(0)";
       if (swipeOpen === card) swipeOpen = null;
       const wrap = card.closest(".swipe-wrap");
       if (wrap) setTimeout(() => wrap.classList.remove("swiping"), 220);
+      // Reset flag so the click event that follows is treated as a real tap
+      _didSwipeMove = false;
     }
+
     setTimeout(() => {
       card.style.transition = "";
-      _didSwipe = false;
-    }, 240);
+    }, 350);
   },
   { passive: true }
 );
