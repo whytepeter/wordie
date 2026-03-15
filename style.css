@@ -85,6 +85,12 @@ body {
 /* ── TOP BAR ──────────────────────────────── */
 .topbar {
   padding: 52px 22px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .app-label {
   font-size: 11px;
