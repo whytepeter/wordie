@@ -401,6 +401,47 @@ body.light .topbar.scrolled {
   height: 15px;
 }
 
+/* ── AUDIO BUTTON ─────────────────────────── */
+.audio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--vsoft);
+  border: none;
+  cursor: pointer;
+  color: var(--violet);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.audio-btn:active {
+  transform: scale(0.9);
+  background: var(--vglow);
+}
+.audio-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+@keyframes pulse-audio {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.92);
+  }
+}
+.audio-btn.audio-playing {
+  animation: pulse-audio 0.7s ease infinite;
+  background: var(--violet);
+  color: #fff;
+}
+
 /* Collapsed body */
 .card-body {
   max-height: 0;

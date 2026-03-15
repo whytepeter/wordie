@@ -146,6 +146,8 @@ async function addWord() {
       word: entry.word || word,
       phonetic:
         entry.phonetic || entry.phonetics?.find((p) => p.text)?.text || "",
+      audio:
+        entry.phonetics?.find((p) => p.audio && p.audio.trim())?.audio || "",
       meanings,
       date: todayKey(),
       color: COLORS[words.length % COLORS.length],
@@ -340,11 +342,24 @@ function buildCard(w, showDel) {
             ${ratingDot}
             <div>
               <div class="wcard-word">${w.word}</div>
-              ${
-                w.phonetic
-                  ? `<div class="wcard-phonetic">${w.phonetic}</div>`
-                  : ""
-              }
+              <div style="display:flex;align-items:center;gap:6px;">
+                ${
+                  w.phonetic
+                    ? `<div class="wcard-phonetic">${w.phonetic}</div>`
+                    : ""
+                }
+                ${
+                  w.audio
+                    ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)" title="Hear pronunciation">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M15.54 8.46a5 5 0 010 7.07"/>
+                    <path d="M19.07 4.93a10 10 0 010 14.14"/>
+                  </svg>
+                </button>`
+                    : ""
+                }
+              </div>
             </div>
           </div>
           <div class="wcard-actions">
@@ -609,7 +624,24 @@ function renderSessionCard() {
       <div class="sm-card" onclick="revealCard()">
         <div class="sm-card-front">
           <div class="sm-word">${w.word}</div>
-          ${w.phonetic ? `<div class="sm-phonetic">${w.phonetic}</div>` : ""}
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            ${
+              w.phonetic
+                ? `<div class="sm-phonetic" style="margin-top:0">${w.phonetic}</div>`
+                : ""
+            }
+            ${
+              w.audio
+                ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 010 7.07"/>
+                <path d="M19.07 4.93a10 10 0 010 14.14"/>
+              </svg>
+            </button>`
+                : ""
+            }
+          </div>
         </div>
         <div class="sm-card-divider"></div>
         <div class="sm-card-back" id="smReveal">
@@ -774,6 +806,25 @@ function deleteWord(id) {
   if (activeTab === "study") renderStudyHome();
   updateStreak();
   showToast("Word removed");
+}
+
+// ── AUDIO ──────────────────────────────────────────────────────────────────
+let _audio = null;
+function playAudio(url, btn) {
+  if (!url) return;
+  if (_audio) {
+    _audio.pause();
+    _audio = null;
+  }
+  _audio = new Audio(url);
+  _audio.play().catch(() => showToast("Audio unavailable"));
+  // animate button while playing
+  btn.classList.add("audio-playing");
+  _audio.addEventListener("ended", () => btn.classList.remove("audio-playing"));
+  _audio.addEventListener("error", () => {
+    btn.classList.remove("audio-playing");
+    showToast("Audio unavailable");
+  });
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
