@@ -54,7 +54,63 @@
       <div class="screen" id="screen-library">
         <div class="topbar">
           <div class="app-label">Wordie</div>
-          <div class="page-title">Your <em>library</em></div>
+          <div class="topbar-row">
+            <div class="page-title">Your <em>library</em></div>
+            <button
+              class="search-toggle-btn"
+              id="searchToggleBtn"
+              onclick="toggleSearch()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </button>
+          </div>
+          <div class="search-wrap" id="searchWrap">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              class="search-input"
+              id="searchInput"
+              type="text"
+              placeholder="Search words…"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              oninput="renderLibrary()"
+            />
+            <button
+              class="search-clear-btn"
+              id="searchClearBtn"
+              onclick="clearSearch()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div id="libraryContent"></div>
       </div>
@@ -67,8 +123,6 @@
         </div>
         <div id="studyContent"></div>
       </div>
-
-      <!-- SETTINGS SCREEN (empty — content in sheet) -->
 
       <!-- TAB BAR -->
       <nav class="tabbar">
@@ -157,7 +211,7 @@
       </nav>
     </div>
 
-    <!-- MODAL OVERLAY (for add sheet) -->
+    <!-- MODAL OVERLAY -->
     <div
       class="modal-overlay"
       id="modalOverlay"
@@ -169,7 +223,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <div class="sheet-title">Add a <em>word</em></div>
-        <button class="sheet-close" onclick="closeAllSheets()">
+        <button class="sheet-close" onclick="closeSheet()">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -228,6 +282,44 @@
       </div>
 
       <div class="settings-section">
+        <div class="settings-label">Daily goal</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div class="settings-row-title">Words per day</div>
+                <div class="settings-row-sub">Target to hit each day</div>
+              </div>
+            </div>
+            <div class="goal-options">
+              <button class="theme-opt" id="goal-3" onclick="setGoal(3)">
+                3
+              </button>
+              <button class="theme-opt" id="goal-5" onclick="setGoal(5)">
+                5
+              </button>
+              <button class="theme-opt" id="goal-10" onclick="setGoal(10)">
+                10
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-label">Appearance</div>
         <div class="settings-card">
           <div class="settings-row">
@@ -279,8 +371,43 @@
       </div>
 
       <div class="settings-section">
-        <div class="settings-label">App</div>
+        <div class="settings-label">Data</div>
         <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </div>
+              <div>
+                <div class="settings-row-title">Export words</div>
+                <div class="settings-row-sub">Download as CSV</div>
+              </div>
+            </div>
+            <button class="settings-update-btn" onclick="exportCSV()">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export
+            </button>
+          </div>
           <div class="settings-row">
             <div class="settings-row-left">
               <div class="settings-row-icon">
@@ -329,6 +456,103 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">About</div>
+        <div class="settings-card">
+          <div class="settings-row" style="justify-content: center">
+            <div style="text-align: center">
+              <div
+                style="
+                  font-family: 'Fraunces', serif;
+                  font-size: 18px;
+                  font-style: italic;
+                  color: var(--violet);
+                "
+              >
+                Wordie
+              </div>
+              <div style="font-size: 12px; color: var(--t3); margin-top: 2px">
+                Your daily word journal · v1.0
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ONBOARDING OVERLAY -->
+    <div class="onboard-overlay" id="onboardOverlay">
+      <div class="onboard-card">
+        <div class="onboard-logo">W</div>
+        <div class="onboard-title">Welcome to <em>Wordie</em></div>
+        <div class="onboard-sub">Build your vocabulary one word at a time.</div>
+        <div class="onboard-steps">
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Add a word</div>
+              <div class="onboard-step-sub">
+                Tap + and type any English word. We fetch the definition
+                automatically.
+              </div>
+            </div>
+          </div>
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Expand to learn</div>
+              <div class="onboard-step-sub">
+                Tap any card to reveal its meaning, examples and pronunciation.
+              </div>
+            </div>
+          </div>
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="3" />
+                <path d="M12 5v14M2 12h20" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Study and rate</div>
+              <div class="onboard-step-sub">
+                Start a study session, flip cards and mark each word Easy, Fuzzy
+                or Blank.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="onboard-btn" onclick="dismissOnboarding()">
+          Get started
+        </button>
       </div>
     </div>
 

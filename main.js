@@ -4,9 +4,8 @@ const COLORS = ["c-violet", "c-mint", "c-amber", "c-coral", "c-sky"];
 
 let words = [];
 let activeTab = "today";
-
-// Study session state
-let session = []; // array of word objects for this session
+let dailyGoal = 5;
+let session = [];
 let sessionIndex = 0;
 let sessionRevealed = false;
 
@@ -16,6 +15,7 @@ function load() {
   } catch {
     words = [];
   }
+  dailyGoal = parseInt(localStorage.getItem("wordie_goal") || "5", 10);
 }
 function save() {
   localStorage.setItem(STORE, JSON.stringify(words));
@@ -33,12 +33,10 @@ function switchTab(tab) {
     .forEach((t) => t.classList.remove("active"));
   document.getElementById("screen-" + tab).classList.add("active");
   document.getElementById("tab-" + tab).classList.add("active");
-
   const fab = document.getElementById("todayFab");
   if (tab === "study" || tab === "settings") {
     if (fab) fab.remove();
   }
-
   if (tab === "today") renderToday();
   if (tab === "library") renderLibrary();
   if (tab === "study") renderStudyHome();
@@ -79,7 +77,7 @@ function openSheet() {
   setTimeout(() => {
     const i = document.getElementById("wordInput");
     if (i) i.focus();
-  }, 380);
+  }, 80);
 }
 
 function closeAllSheets() {
@@ -89,6 +87,7 @@ function closeAllSheets() {
 
 function closeSheet() {
   document.getElementById("addSheet").classList.remove("open");
+  document.getElementById("addSheet").style.transform = "";
   document.getElementById("modalOverlay").classList.remove("open");
   const inp = document.getElementById("wordInput");
   if (inp) {
@@ -96,8 +95,23 @@ function closeSheet() {
     inp.blur();
   }
   const fs = document.getElementById("fetchStatus");
-  fs.textContent = "";
-  fs.className = "fetch-status";
+  if (fs) {
+    fs.textContent = "";
+    fs.className = "fetch-status";
+  }
+}
+
+// iOS keyboard push
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    const sheet = document.getElementById("addSheet");
+    if (!sheet.classList.contains("open")) return;
+    const kb = window.innerHeight - window.visualViewport.height;
+    sheet.style.transform =
+      kb > 50
+        ? `translateX(-50%) translateY(-${kb}px)`
+        : "translateX(-50%) translateY(0)";
+  });
 }
 
 document.getElementById("wordInput").addEventListener("keydown", (e) => {
@@ -113,20 +127,18 @@ async function addWord() {
     showToast("Already in your library");
     return;
   }
-
   const btn = document.getElementById("addBtn");
   const status = document.getElementById("fetchStatus");
   btn.disabled = true;
   status.className = "fetch-status loading";
   status.textContent = "Looking it up…";
-
   try {
     const res = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(
         word
       )}`
     );
-    if (!res.ok) throw new Error("not found");
+    if (!res.ok) throw 0;
     const data = await res.json();
     const entry = data[0];
     const meanings = [];
@@ -151,19 +163,22 @@ async function addWord() {
       meanings,
       date: todayKey(),
       color: COLORS[words.length % COLORS.length],
-      ratings: [], // 'easy' | 'fuzzy' | 'blank'
+      ratings: [],
     };
     words.unshift(obj);
     save();
     inp.value = "";
     status.className = "fetch-status ok";
     status.textContent = `✓ "${obj.word}" added`;
+    haptic("light");
     updateStreak();
     if (activeTab === "today") renderToday();
-    // auto-clear status after 2s then close sheet
+    if (activeTab === "library") renderLibrary();
     setTimeout(() => {
-      status.textContent = "";
-      status.className = "fetch-status";
+      if (status) {
+        status.textContent = "";
+        status.className = "fetch-status";
+      }
     }, 1800);
   } catch {
     status.className = "fetch-status error";
@@ -184,57 +199,69 @@ function renderToday() {
     day: "numeric",
     month: "long",
   });
-  const pct = Math.min(100, today.length * 10);
+  const pct = Math.min(100, Math.round((today.length / dailyGoal) * 100));
+  const goalMet = today.length >= dailyGoal;
+  const wotd = getWordOfDay();
 
   let html = `
     <div class="today-hero">
       <div class="today-time">${greeting}</div>
-      <div class="today-count">${today.length}</div>
+      <div class="today-count${goalMet ? " goal-met" : ""}">${
+    today.length
+  }</div>
       <div class="today-label">${
         today.length === 1 ? "word recorded" : "words recorded"
       } today</div>
       <div class="today-date">${dateStr}</div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="today-goal">Goal: ${today.length} / ${dailyGoal} words${
+    goalMet ? " 🎉" : ""
+  }</div>
     </div>`;
 
-  if (!today.length) {
-    html += `
-      <div class="empty-state">
-        <div class="empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
-        </div>
-        <div class="empty-title">Nothing yet today</div>
-        <div class="empty-sub">Tap the + button to record your first word.</div>
-        <button class="empty-cta" onclick="openSheet()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Add first word
-        </button>
-      </div>`;
-  } else {
-    html += `
-      <div class="section-hd">
-        <h3>Today's words</h3>
-        <span class="badge">${today.length}</span>
-      </div>
-      <div class="cards-list">
-        ${today.map((w) => buildCard(w, true)).join("")}
-      </div>
-      <div style="height:88px"></div>`;
+  if (wotd) {
+    html += `<div class="section-hd"><h3>Word of the day</h3></div>
+      <div class="cards-list">${buildCard(wotd, false)}</div>
+      <div style="height:12px"></div>`;
   }
 
+  if (!today.length) {
+    html += `<div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+      <div class="empty-title">Nothing yet today</div>
+      <div class="empty-sub">Tap the + button to record your first word.</div>
+      <button class="empty-cta" onclick="openSheet()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add first word
+      </button></div>`;
+    const fab = document.getElementById("todayFab");
+    if (fab) fab.remove();
+  } else {
+    html += `<div class="section-hd"><h3>Today's words</h3><span class="badge">${
+      today.length
+    }</span></div>
+      <div class="cards-list">${today
+        .map((w) => buildCard(w, true))
+        .join("")}</div>
+      <div style="height:88px"></div>`;
+    showFab();
+  }
   document.getElementById("todayContent").innerHTML = html;
-
-  showFab();
 }
 
-// ── FAB HELPER ─────────────────────────────────────────────────────────────
+function getWordOfDay() {
+  const today = todayKey();
+  const candidates = words.filter((w) => w.date !== today);
+  if (!candidates.length) return null;
+  return (
+    [...candidates].sort(
+      (a, b) => (a.ratings?.length || 0) - (b.ratings?.length || 0)
+    )[0] || null
+  );
+}
+
 function showFab() {
-  const existing = document.getElementById("todayFab");
-  if (existing) existing.remove();
+  if (document.getElementById("todayFab")) return;
   const fab = document.createElement("button");
   fab.id = "todayFab";
   fab.className = "fab";
@@ -243,40 +270,93 @@ function showFab() {
   document.getElementById("app").appendChild(fab);
 }
 
+// ── LIBRARY SEARCH ─────────────────────────────────────────────────────────
+function toggleSearch() {
+  const wrap = document.getElementById("searchWrap");
+  const btn = document.getElementById("searchToggleBtn");
+  const inp = document.getElementById("searchInput");
+  if (!wrap) return;
+  const isOpen = wrap.classList.contains("search-open");
+  if (isOpen) {
+    wrap.classList.remove("search-open");
+    btn.classList.remove("active");
+    if (inp) {
+      inp.value = "";
+      inp.blur();
+    }
+    renderLibrary();
+  } else {
+    wrap.classList.add("search-open");
+    btn.classList.add("active");
+    setTimeout(() => inp?.focus(), 200);
+  }
+}
+
+function clearSearch() {
+  const inp = document.getElementById("searchInput");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+  }
+  renderLibrary();
+}
+
 // ── LIBRARY ────────────────────────────────────────────────────────────────
 function renderLibrary() {
+  const query = (document.getElementById("searchInput")?.value || "")
+    .trim()
+    .toLowerCase();
+  const clearBtn = document.getElementById("searchClearBtn");
+  if (clearBtn) clearBtn.style.display = query ? "flex" : "none";
+  const filtered = query
+    ? words.filter((w) => w.word.toLowerCase().includes(query))
+    : words;
+  const container = document.getElementById("libraryContent");
+
   if (!words.length) {
-    document.getElementById("libraryContent").innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <path d="M4 19V6a2 2 0 012-2h13"/><path d="M4 19a2 2 0 002 2h13V4"/>
-          </svg>
-        </div>
-        <div class="empty-title">Library is empty</div>
-        <div class="empty-sub">Words you add will appear here, grouped by day.</div>
-      </div>`;
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19V6a2 2 0 012-2h13"/><path d="M4 19a2 2 0 002 2h13V4"/></svg></div>
+      <div class="empty-title">Library is empty</div>
+      <div class="empty-sub">Words you add will appear here, grouped by day.</div></div>`;
+    showFab();
     return;
   }
+
+  if (query && !filtered.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+      <div class="empty-title">No results</div>
+      <div class="empty-sub">No words match "<strong>${query}</strong>"</div></div>`;
+    return;
+  }
+
   const grouped = {};
-  words.forEach((w) => {
+  filtered.forEach((w) => {
     (grouped[w.date] = grouped[w.date] || []).push(w);
   });
   const dates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
   let html = "";
   dates.forEach((date) => {
     const g = grouped[date];
-    html += `
-      <div class="section-hd mt8">
-        <h3>${dateLabel(date)}</h3><span class="badge">${g.length}</span>
-      </div>
+    html += `<div class="section-hd mt8"><h3>${dateLabel(
+      date
+    )}</h3><span class="badge">${g.length}</span></div>
       <div class="cards-list">${g
         .map((w) => buildCard(w, true))
         .join("")}</div>`;
   });
   html += '<div style="height:88px"></div>';
-  document.getElementById("libraryContent").innerHTML = html;
+  container.innerHTML = html;
   showFab();
+}
+
+function clearSearch() {
+  const inp = document.getElementById("searchInput");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+  }
+  renderLibrary();
 }
 
 function dateLabel(ds) {
@@ -299,216 +379,173 @@ function toggleCard(id) {
   const arrow = document.getElementById("card-arrow-" + id);
   if (!body) return;
   const isOpen = body.classList.contains("card-body-open");
-  // collapse all open cards first
   document.querySelectorAll(".card-body-open").forEach((el) => {
     el.classList.remove("card-body-open");
-    const otherId = el.id.replace("card-body-", "");
-    const otherArrow = document.getElementById("card-arrow-" + otherId);
-    if (otherArrow) otherArrow.style.transform = "rotate(0deg)";
+    const oArrow = document.getElementById(
+      "card-arrow-" + el.id.replace("card-body-", "")
+    );
+    if (oArrow) oArrow.style.transform = "rotate(0deg)";
   });
-  // if it wasn't open, open it now
   if (!isOpen) {
     body.classList.add("card-body-open");
     if (arrow) arrow.style.transform = "rotate(180deg)";
   }
 }
 
+let _didSwipe = false;
+function handleCardTap(e, id) {
+  if (_didSwipe) {
+    _didSwipe = false;
+    return;
+  }
+  toggleCard(id);
+}
+
 function buildCard(w, showDel) {
-  const lastRating =
-    w.ratings && w.ratings.length ? w.ratings[w.ratings.length - 1] : null;
-  const ratingDot = lastRating
-    ? `<span class="rating-dot rating-${lastRating}"></span>`
-    : "";
-
+  const ratingDot = "";
+  const sparkline = "";
   const delBtn = showDel
-    ? `
-    <button class="swipe-del-btn" onclick="deleteWord(${w.id})">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-        <path d="M10 11v6M14 11v6"/>
-      </svg>
-    </button>`
+    ? `<button class="swipe-del-btn" onclick="deleteWord(${w.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>`
     : "";
 
-  return `
-    <div class="swipe-wrap" id="swipe-${w.id}">
-      ${delBtn}
-      <div class="wcard ${w.color || "c-violet"}" id="wcard-${
+  return `<div class="swipe-wrap" id="swipe-${w.id}">${delBtn}
+    <div class="wcard ${w.color || "c-violet"}" id="wcard-${
     w.id
-  }" onclick="toggleCard(${w.id})">
-        <div class="wcard-top">
-          <div class="wcard-left">
-            ${ratingDot}
-            <div>
-              <div class="wcard-word">${w.word}</div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                ${
-                  w.phonetic
-                    ? `<div class="wcard-phonetic">${w.phonetic}</div>`
-                    : ""
-                }
-                ${
-                  w.audio
-                    ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)" title="Hear pronunciation">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                    <path d="M15.54 8.46a5 5 0 010 7.07"/>
-                    <path d="M19.07 4.93a10 10 0 010 14.14"/>
-                  </svg>
-                </button>`
-                    : ""
-                }
-              </div>
-            </div>
-          </div>
-          <div class="wcard-actions">
-            <div class="wcard-date">${dateLabel(w.date)}</div>
-            <div class="card-arrow" id="card-arrow-${w.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M6 9l6 6 6-6"/>
-              </svg>
+  }" onclick="handleCardTap(event,${w.id})">
+      <div class="wcard-top">
+        <div class="wcard-left">${ratingDot}
+          <div>
+            <div class="wcard-word">${w.word}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${
+                w.phonetic
+                  ? `<div class="wcard-phonetic">${w.phonetic}</div>`
+                  : ""
+              }
+              ${
+                w.audio
+                  ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg></button>`
+                  : ""
+              }
             </div>
           </div>
         </div>
-        <div class="card-body" id="card-body-${
-          w.id
-        }" onclick="event.stopPropagation()">
-          <div class="wcard-meanings">
-            ${w.meanings
-              .map(
-                (m) => `
-              <div>
-                <span class="pos-tag ${posClass(m.pos)}">${m.pos}</span>
-                <div class="def-text">${m.def}</div>
-                ${m.ex ? `<div class="ex-text">"${m.ex}"</div>` : ""}
-              </div>`
-              )
-              .join("")}
-          </div>
+        <div class="wcard-actions">
+          <div class="wcard-date">${dateLabel(w.date)}</div>
+          <div class="card-arrow" id="card-arrow-${
+            w.id
+          }"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
         </div>
       </div>
-    </div>`;
+      <div class="card-body" id="card-body-${
+        w.id
+      }" onclick="event.stopPropagation()">
+        <div class="wcard-meanings">
+          ${w.meanings
+            .map(
+              (m) =>
+                `<div><span class="pos-tag ${posClass(m.pos)}">${
+                  m.pos
+                }</span><div class="def-text">${m.def}</div>${
+                  m.ex ? `<div class="ex-text">"${m.ex}"</div>` : ""
+                }</div>`
+            )
+            .join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 
 // ── STUDY HOME ─────────────────────────────────────────────────────────────
 function renderStudyHome() {
   const area = document.getElementById("studyContent");
   if (!words.length) {
-    area.innerHTML = `
-      <div class="study-home">
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M12 5v14M2 12h20"/>
-            </svg>
-          </div>
-          <div class="empty-title">No words yet</div>
-          <div class="empty-sub">Add words to start a study session.</div>
-        </div>
-      </div>`;
+    area.innerHTML = `<div class="study-home"><div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M12 5v14M2 12h20"/></svg></div>
+      <div class="empty-title">No words yet</div>
+      <div class="empty-sub">Add words to start a study session.</div>
+    </div></div>`;
     return;
   }
-
   const total = words.length;
   const blanks = words.filter((w) => lastRating(w) === "blank").length;
   const fuzzies = words.filter((w) => lastRating(w) === "fuzzy").length;
   const easies = words.filter((w) => lastRating(w) === "easy").length;
-  const unrated = words.filter((w) => !lastRating(w)).length;
-
-  // Session size options — max out at total
   const opts = [5, 10, 15, 20].filter((n) => n <= total);
   if (!opts.includes(total)) opts.push(total);
 
-  area.innerHTML = `
-    <div class="study-home">
-      <div class="study-stats-row">
-        <div class="study-stat">
-          <div class="study-stat-num">${total}</div>
-          <div class="study-stat-label">Total</div>
-        </div>
-        <div class="study-stat">
-          <div class="study-stat-num stat-blank">${blanks}</div>
-          <div class="study-stat-label">Blank</div>
-        </div>
-        <div class="study-stat">
-          <div class="study-stat-num stat-fuzzy">${fuzzies}</div>
-          <div class="study-stat-label">Fuzzy</div>
-        </div>
-        <div class="study-stat">
-          <div class="study-stat-num stat-easy">${easies}</div>
-          <div class="study-stat-label">Easy</div>
-        </div>
-      </div>
-
-      <div class="session-config">
-        <div class="session-config-label">Words per session</div>
-        <div class="session-size-row" id="sessionSizeRow">
-          ${opts
-            .map(
-              (n, i) => `
-            <button class="size-btn ${
-              i === 0 ? "active" : ""
-            }" onclick="selectSize(${n}, this)">${
+  let html = `<div class="study-home">
+    <div class="study-stats-row">
+      <div class="study-stat"><div class="study-stat-num">${total}</div><div class="study-stat-label">Total</div></div>
+      <div class="study-stat"><div class="study-stat-num stat-blank">${blanks}</div><div class="study-stat-label">Blank</div></div>
+      <div class="study-stat"><div class="study-stat-num stat-fuzzy">${fuzzies}</div><div class="study-stat-label">Fuzzy</div></div>
+      <div class="study-stat"><div class="study-stat-num stat-easy">${easies}</div><div class="study-stat-label">Easy</div></div>
+    </div>
+    <div class="session-config">
+      <div class="session-config-label">Words per session</div>
+      <div class="session-size-row" id="sessionSizeRow">
+        ${opts
+          .map(
+            (n, i) =>
+              `<button class="size-btn ${
+                i === 0 ? "active" : ""
+              }" onclick="selectSize(${n},this)">${
                 n === total ? "All " + n : n
-              }</button>
-          `
-            )
-            .join("")}
-        </div>
+              }</button>`
+          )
+          .join("")}
       </div>
-
-      <div class="session-config" style="margin-top:12px">
-        <div class="session-config-label">Study from</div>
-        <div class="session-size-row">
-          <button class="size-btn active" id="filter-all"    onclick="selectFilter('all', this)">All</button>
-          <button class="size-btn"        id="filter-blank"  onclick="selectFilter('blank', this)">Blank</button>
-          <button class="size-btn"        id="filter-fuzzy"  onclick="selectFilter('fuzzy', this)">Fuzzy</button>
-          <button class="size-btn"        id="filter-unrated" onclick="selectFilter('unrated', this)">New</button>
-        </div>
+    </div>
+    <div class="session-config" style="margin-top:12px">
+      <div class="session-config-label">Study from</div>
+      <div class="session-size-row">
+        <button class="size-btn active" id="filter-all"     onclick="selectFilter('all',this)">All</button>
+        <button class="size-btn"        id="filter-blank"   onclick="selectFilter('blank',this)">Blank</button>
+        <button class="size-btn"        id="filter-fuzzy"   onclick="selectFilter('fuzzy',this)">Fuzzy</button>
+        <button class="size-btn"        id="filter-unrated" onclick="selectFilter('unrated',this)">New</button>
       </div>
+    </div>
+    <button class="start-session-btn" onclick="startSession()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Start session
+    </button>`;
 
-      <button class="start-session-btn" onclick="startSession()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-        Start session
-      </button>
-
-      ${
-        blanks + fuzzies > 0
-          ? `
-        <div class="weak-words-section">
-          <div class="section-hd" style="padding:0;margin-bottom:10px">
-            <h3>Needs work</h3>
-            <span class="badge">${blanks + fuzzies}</span>
-          </div>
-          <div class="cards-list" style="padding:0">
-            ${words
-              .filter(
-                (w) => lastRating(w) === "blank" || lastRating(w) === "fuzzy"
-              )
-              .map((w) => buildCard(w, false))
-              .join("")}
-          </div>
-        </div>`
-          : ""
+  // Resume saved session?
+  const saved = sessionStorage.getItem("wordie_session");
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.ids?.length && s.index < s.ids.length) {
+        html += `<button class="reshuffle-btn" style="margin-top:10px;width:100%" onclick="resumeSession()">Resume last session (${s.index}/${s.ids.length})</button>`;
       }
-    </div>`;
+    } catch {}
+  }
 
-  // default selections
+  if (blanks + fuzzies > 0) {
+    html += `<div class="weak-words-section">
+      <div class="section-hd" style="padding:0;margin-bottom:10px"><h3>Needs work</h3><span class="badge">${
+        blanks + fuzzies
+      }</span></div>
+      <div class="cards-list" style="padding:0">${words
+        .filter((w) => lastRating(w) === "blank" || lastRating(w) === "fuzzy")
+        .map((w) => buildCard(w, false))
+        .join("")}</div>
+    </div>`;
+  }
+  html += "</div>";
+  area.innerHTML = html;
   window._sessionSize = opts[0];
   window._sessionFilter = "all";
 }
 
 function selectSize(n, btn) {
-  document.querySelectorAll(".size-btn").forEach((b) => {
-    if (b.closest("#sessionSizeRow")) b.classList.remove("active");
-  });
+  document
+    .querySelectorAll("#sessionSizeRow .size-btn")
+    .forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
   window._sessionSize = n;
 }
-
 function selectFilter(f, btn) {
   ["all", "blank", "fuzzy", "unrated"].forEach((id) => {
     const el = document.getElementById("filter-" + id);
@@ -517,33 +554,48 @@ function selectFilter(f, btn) {
   btn.classList.add("active");
   window._sessionFilter = f;
 }
-
 function lastRating(w) {
-  return w.ratings && w.ratings.length ? w.ratings[w.ratings.length - 1] : null;
+  return w.ratings?.length ? w.ratings[w.ratings.length - 1] : null;
 }
 
 // ── SESSION ────────────────────────────────────────────────────────────────
 function startSession() {
   const size = window._sessionSize || 10;
   const filter = window._sessionFilter || "all";
-
   let pool = [...words];
   if (filter === "blank") pool = pool.filter((w) => lastRating(w) === "blank");
   if (filter === "fuzzy") pool = pool.filter((w) => lastRating(w) === "fuzzy");
   if (filter === "unrated") pool = pool.filter((w) => !lastRating(w));
-
   if (!pool.length) {
     showToast("No words match that filter");
     return;
   }
-
-  // Shuffle and slice
-  pool = pool.sort(() => Math.random() - 0.5).slice(0, size);
-  session = pool;
+  session = pool.sort(() => Math.random() - 0.5).slice(0, size);
   sessionIndex = 0;
   sessionRevealed = false;
-
+  saveSessionState();
   openStudyModal();
+}
+
+function resumeSession() {
+  const saved = sessionStorage.getItem("wordie_session");
+  if (!saved) return;
+  try {
+    const s = JSON.parse(saved);
+    session = s.ids.map((id) => words.find((w) => w.id === id)).filter(Boolean);
+    sessionIndex = s.index;
+    sessionRevealed = false;
+    openStudyModal();
+  } catch {
+    sessionStorage.removeItem("wordie_session");
+  }
+}
+
+function saveSessionState() {
+  sessionStorage.setItem(
+    "wordie_session",
+    JSON.stringify({ ids: session.map((w) => w.id), index: sessionIndex })
+  );
 }
 
 // ── STUDY MODAL ────────────────────────────────────────────────────────────
@@ -564,6 +616,7 @@ function closeStudyModal() {
   const modal = document.getElementById("studyModal");
   if (modal) modal.classList.remove("open");
   document.body.style.overflow = "";
+  sessionStorage.removeItem("wordie_session");
   if (activeTab === "study") renderStudyHome();
   if (activeTab === "today") renderToday();
   if (activeTab === "library") renderLibrary();
@@ -572,56 +625,37 @@ function closeStudyModal() {
 function renderSessionCard() {
   const modal = document.getElementById("studyModal");
   if (!modal) return;
-
   if (sessionIndex >= session.length) {
-    // Summary screen
+    sessionStorage.removeItem("wordie_session");
     const ratings = session.map((w) => lastRating(w));
-    const easy = ratings.filter((r) => r === "easy").length;
-    const fuzzy = ratings.filter((r) => r === "fuzzy").length;
-    const blank = ratings.filter((r) => r === "blank").length;
-
-    modal.innerHTML = `
-      <div class="sm-summary">
-        <div class="sm-summary-title">Session complete</div>
-        <div class="sm-summary-sub">${session.length} words reviewed</div>
-        <div class="sm-result-row">
-          <div class="sm-result-item">
-            <div class="sm-result-num sm-easy">${easy}</div>
-            <div class="sm-result-label">Easy</div>
-          </div>
-          <div class="sm-result-item">
-            <div class="sm-result-num sm-fuzzy">${fuzzy}</div>
-            <div class="sm-result-label">Fuzzy</div>
-          </div>
-          <div class="sm-result-item">
-            <div class="sm-result-num sm-blank">${blank}</div>
-            <div class="sm-result-label">Blank</div>
-          </div>
-        </div>
-        <button class="sm-done-btn" onclick="closeStudyModal()">Done</button>
-        <button class="sm-again-btn" onclick="startSession()">Study again</button>
-      </div>`;
+    const easy = ratings.filter((r) => r === "easy").length,
+      fuzzy = ratings.filter((r) => r === "fuzzy").length,
+      blank = ratings.filter((r) => r === "blank").length;
+    modal.innerHTML = `<div class="sm-summary">
+      <div class="sm-summary-title">Session complete</div>
+      <div class="sm-summary-sub">${session.length} words reviewed</div>
+      <div class="sm-result-row">
+        <div class="sm-result-item"><div class="sm-result-num sm-easy">${easy}</div><div class="sm-result-label">Easy</div></div>
+        <div class="sm-result-item"><div class="sm-result-num sm-fuzzy">${fuzzy}</div><div class="sm-result-label">Fuzzy</div></div>
+        <div class="sm-result-item"><div class="sm-result-num sm-blank">${blank}</div><div class="sm-result-label">Blank</div></div>
+      </div>
+      <button class="sm-done-btn" onclick="closeStudyModal()">Done</button>
+      <button class="sm-again-btn" onclick="startSession()">Study again</button>
+    </div>`;
     return;
   }
-
-  const w = session[sessionIndex];
-  const num = sessionIndex + 1;
-  const tot = session.length;
-  const pct = (sessionIndex / tot) * 100;
-
+  const w = session[sessionIndex],
+    num = sessionIndex + 1,
+    tot = session.length,
+    pct = (sessionIndex / tot) * 100;
   modal.innerHTML = `
     <div class="sm-header">
-      <button class="sm-close" onclick="closeStudyModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
+      <button class="sm-close" onclick="closeStudyModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       <div class="sm-progress-bar"><div class="sm-progress-fill" style="width:${pct}%"></div></div>
       <div class="sm-counter">${num} / ${tot}</div>
     </div>
-
     <div class="sm-body">
-      <div class="sm-card" onclick="revealCard()">
+      <div class="sm-card" id="smCard" onclick="revealCard()">
         <div class="sm-card-front">
           <div class="sm-word">${w.word}</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
@@ -632,81 +666,58 @@ function renderSessionCard() {
             }
             ${
               w.audio
-                ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <path d="M15.54 8.46a5 5 0 010 7.07"/>
-                <path d="M19.07 4.93a10 10 0 010 14.14"/>
-              </svg>
-            </button>`
+                ? `<button class="audio-btn" onclick="event.stopPropagation();playAudio('${w.audio}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg></button>`
                 : ""
             }
           </div>
         </div>
         <div class="sm-card-divider"></div>
         <div class="sm-card-back" id="smReveal">
-          <button class="sm-reveal-btn" id="smRevealBtn">
-            Tap to reveal meaning
-          </button>
+          <button class="sm-reveal-btn">Tap to reveal meaning</button>
         </div>
       </div>
     </div>
-
     <div class="sm-rating-row" id="smRatingRow" style="display:none">
-      <button class="rating-btn r-blank" onclick="rateWord('blank')">
-        <span class="r-icon">✗</span>
-        <span class="r-label">Blank</span>
-      </button>
-      <button class="rating-btn r-fuzzy" onclick="rateWord('fuzzy')">
-        <span class="r-icon">~</span>
-        <span class="r-label">Fuzzy</span>
-      </button>
-      <button class="rating-btn r-easy" onclick="rateWord('easy')">
-        <span class="r-icon">✓</span>
-        <span class="r-label">Easy</span>
-      </button>
+      <button class="rating-btn r-blank" onclick="rateWord('blank')"><span class="r-icon">✗</span><span class="r-label">Blank</span></button>
+      <button class="rating-btn r-fuzzy" onclick="rateWord('fuzzy')"><span class="r-icon">~</span><span class="r-label">Fuzzy</span></button>
+      <button class="rating-btn r-easy"  onclick="rateWord('easy')"><span class="r-icon">✓</span><span class="r-label">Easy</span></button>
     </div>`;
-
   sessionRevealed = false;
 }
 
 function revealCard() {
   if (sessionRevealed) return;
-  const w = session[sessionIndex];
-  const revealArea = document.getElementById("smReveal");
-  const ratingRow = document.getElementById("smRatingRow");
+  const w = session[sessionIndex],
+    revealArea = document.getElementById("smReveal"),
+    ratingRow = document.getElementById("smRatingRow");
   if (!revealArea) return;
-
-  revealArea.innerHTML = `
-    <div class="sm-meanings">
-      ${w.meanings
-        .map(
-          (m) => `
-        <div class="sm-meaning-block">
-          <span class="pos-tag ${posClass(m.pos)}">${m.pos}</span>
-          <div class="def-text">${m.def}</div>
-          ${m.ex ? `<div class="ex-text">"${m.ex}"</div>` : ""}
-        </div>`
-        )
-        .join("")}
-    </div>`;
-
-  // disable card click after revealed so ratings don't conflict
-  const card = revealArea.closest(".sm-card");
+  revealArea.innerHTML = `<div class="sm-meanings">${w.meanings
+    .map(
+      (m) =>
+        `<div class="sm-meaning-block"><span class="pos-tag ${posClass(
+          m.pos
+        )}">${m.pos}</span><div class="def-text">${m.def}</div>${
+          m.ex ? `<div class="ex-text">"${m.ex}"</div>` : ""
+        }</div>`
+    )
+    .join("")}</div>`;
+  const card = document.getElementById("smCard");
   if (card) card.style.cursor = "default";
   if (ratingRow) ratingRow.style.display = "flex";
   sessionRevealed = true;
 }
 
 function rateWord(rating) {
-  const w = session[sessionIndex];
-  const wordInStore = words.find((x) => x.id === w.id);
-  if (wordInStore) {
-    if (!wordInStore.ratings) wordInStore.ratings = [];
-    wordInStore.ratings.push(rating);
+  haptic(rating === "easy" ? "medium" : "light");
+  const w = session[sessionIndex],
+    ws = words.find((x) => x.id === w.id);
+  if (ws) {
+    if (!ws.ratings) ws.ratings = [];
+    ws.ratings.push(rating);
     save();
   }
   sessionIndex++;
+  saveSessionState();
   renderSessionCard();
 }
 
@@ -715,15 +726,14 @@ let swipeStartX = 0,
   swipeStartY = 0,
   swipingCard = null,
   swipeOpen = null;
-const SWIPE_THRESHOLD = 60;
-const DELETE_BTN_W = 72;
+const SWIPE_THRESHOLD = 60,
+  DELETE_BTN_W = 72;
 
 document.addEventListener(
   "touchstart",
   (e) => {
     const card = e.target.closest(".wcard");
     if (!card) return;
-    // close any other open swipe
     if (swipeOpen && swipeOpen !== card) {
       closeSwipe(swipeOpen);
       swipeOpen = null;
@@ -731,6 +741,7 @@ document.addEventListener(
     swipeStartX = e.touches[0].clientX;
     swipeStartY = e.touches[0].clientY;
     swipingCard = card;
+    _didSwipe = false;
   },
   { passive: true }
 );
@@ -739,21 +750,25 @@ document.addEventListener(
   "touchmove",
   (e) => {
     if (!swipingCard) return;
-    const dx = e.touches[0].clientX - swipeStartX;
-    const dy = e.touches[0].clientY - swipeStartY;
+    const dx = e.touches[0].clientX - swipeStartX,
+      dy = e.touches[0].clientY - swipeStartY;
     if (Math.abs(dy) > Math.abs(dx) + 8) {
       swipingCard = null;
       return;
     }
+    if (Math.abs(dx) > 8) _didSwipe = true;
     if (dx > 0 && swipeOpen === swipingCard) {
-      const pct = Math.max(0, DELETE_BTN_W - dx);
-      swipingCard.style.transform = `translateX(-${pct}px)`;
+      swipingCard.style.transform = `translateX(-${Math.max(
+        0,
+        DELETE_BTN_W - dx
+      )}px)`;
       return;
     }
-    if (dx < -4) {
-      const shift = Math.min(DELETE_BTN_W, Math.abs(dx));
-      swipingCard.style.transform = `translateX(-${shift}px)`;
-    }
+    if (dx < -4)
+      swipingCard.style.transform = `translateX(-${Math.min(
+        DELETE_BTN_W,
+        Math.abs(dx)
+      )}px)`;
   },
   { passive: true }
 );
@@ -762,8 +777,8 @@ document.addEventListener(
   "touchend",
   (e) => {
     if (!swipingCard) return;
-    const dx = e.changedTouches[0].clientX - swipeStartX;
-    const card = swipingCard;
+    const dx = e.changedTouches[0].clientX - swipeStartX,
+      card = swipingCard;
     swipingCard = null;
     card.style.transition = "transform 0.22s cubic-bezier(.4,0,.2,1)";
     if (dx < -SWIPE_THRESHOLD) {
@@ -780,7 +795,6 @@ document.addEventListener(
   { passive: true }
 );
 
-// Tap outside any open card — close it
 document.addEventListener("click", (e) => {
   if (swipeOpen && !swipeOpen.closest(".swipe-wrap")?.contains(e.target)) {
     closeSwipe(swipeOpen);
@@ -801,6 +815,7 @@ function closeSwipe(card) {
 function deleteWord(id) {
   words = words.filter((w) => w.id !== id);
   save();
+  haptic("light");
   if (activeTab === "today") renderToday();
   if (activeTab === "library") renderLibrary();
   if (activeTab === "study") renderStudyHome();
@@ -818,13 +833,18 @@ function playAudio(url, btn) {
   }
   _audio = new Audio(url);
   _audio.play().catch(() => showToast("Audio unavailable"));
-  // animate button while playing
   btn.classList.add("audio-playing");
   _audio.addEventListener("ended", () => btn.classList.remove("audio-playing"));
   _audio.addEventListener("error", () => {
     btn.classList.remove("audio-playing");
     showToast("Audio unavailable");
   });
+}
+
+// ── HAPTICS ────────────────────────────────────────────────────────────────
+function haptic(type = "light") {
+  if (!("vibrate" in navigator)) return;
+  navigator.vibrate({ light: [10], medium: [20], heavy: [30] }[type] || [10]);
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -845,9 +865,8 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// ── SETTINGS SHEET ─────────────────────────────────────────────────────────
+// ── SETTINGS ───────────────────────────────────────────────────────────────
 function openSettingsSheet() {
-  // deactivate all tabs visually (settings isn't a real screen)
   document
     .querySelectorAll(".tab-item")
     .forEach((t) => t.classList.remove("active"));
@@ -855,32 +874,43 @@ function openSettingsSheet() {
   document.getElementById("settingsSheet").classList.add("open");
   document.getElementById("modalOverlay").classList.add("open");
   updateThemeButtons();
+  updateGoalButtons();
 }
 function closeSettingsSheet() {
   document.getElementById("settingsSheet").classList.remove("open");
   document.getElementById("modalOverlay").classList.remove("open");
-  // restore active tab
   document
     .querySelectorAll(".tab-item")
     .forEach((t) => t.classList.remove("active"));
   document.getElementById("tab-" + activeTab).classList.add("active");
 }
 
-// ── THEME ───────────────────────────────────────────────────────────────────
-const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
-
-function applyTheme(mode) {
-  const isLight =
-    mode === "light" || (mode === "system" && !systemDark.matches);
-  document.body.classList.toggle("light", isLight);
+function setGoal(n) {
+  dailyGoal = n;
+  localStorage.setItem("wordie_goal", n);
+  updateGoalButtons();
+  if (activeTab === "today") renderToday();
+}
+function updateGoalButtons() {
+  [3, 5, 10].forEach((n) => {
+    const el = document.getElementById("goal-" + n);
+    if (el) el.classList.toggle("active", dailyGoal === n);
+  });
 }
 
+// ── THEME ───────────────────────────────────────────────────────────────────
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+function applyTheme(mode) {
+  document.body.classList.toggle(
+    "light",
+    mode === "light" || (mode === "system" && !systemDark.matches)
+  );
+}
 function setTheme(mode) {
   localStorage.setItem("wordie_theme", mode);
   applyTheme(mode);
   updateThemeButtons();
 }
-
 function updateThemeButtons() {
   const saved = localStorage.getItem("wordie_theme") || "system";
   ["light", "dark", "system"].forEach((m) => {
@@ -888,14 +918,10 @@ function updateThemeButtons() {
     if (el) el.classList.toggle("active", saved === m);
   });
 }
-
-// Listen for system preference changes
 systemDark.addEventListener("change", () => {
   if ((localStorage.getItem("wordie_theme") || "system") === "system")
     applyTheme("system");
 });
-
-// Apply on load
 applyTheme(localStorage.getItem("wordie_theme") || "system");
 
 // ── UPDATE ───────────────────────────────────────────────────────────────────
@@ -923,14 +949,62 @@ function checkForUpdate() {
   });
 }
 
+// ── EXPORT CSV ─────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!words.length) {
+    showToast("No words to export");
+    return;
+  }
+  const header =
+    "Word,Phonetic,Part of Speech,Definition,Example,Date Added,Last Rating";
+  const rows = words.map((w) => {
+    const m = w.meanings[0] || {};
+    const esc = (s) => `"${(s || "").replace(/"/g, '""')}"`;
+    return [
+      esc(w.word),
+      esc(w.phonetic),
+      esc(m.pos),
+      esc(m.def),
+      esc(m.ex),
+      esc(w.date),
+      esc(lastRating(w) || ""),
+    ].join(",");
+  });
+  const blob = new Blob([[header, ...rows].join("\n")], { type: "text/csv" });
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(blob),
+    download: "wordie-words.csv",
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast("Exported!");
+}
+
+// ── ONBOARDING ─────────────────────────────────────────────────────────────
+function dismissOnboarding() {
+  localStorage.setItem("wordie_onboarded", "1");
+  const el = document.getElementById("onboardOverlay");
+  if (!el) return;
+  el.classList.remove("show");
+  el.classList.add("dismissed");
+  setTimeout(() => el.remove(), 400);
+}
+if (!localStorage.getItem("wordie_onboarded")) {
+  const el = document.getElementById("onboardOverlay");
+  if (el) el.classList.add("show");
+} else {
+  const el = document.getElementById("onboardOverlay");
+  if (el) el.remove();
+}
+
 // ── STICKY HEADER BLUR ─────────────────────────────────────────────────────
 document.querySelectorAll(".screen").forEach((screen) => {
   screen.addEventListener(
     "scroll",
     () => {
-      const topbar = screen.querySelector(".topbar");
-      if (!topbar) return;
-      topbar.classList.toggle("scrolled", screen.scrollTop > 10);
+      const tb = screen.querySelector(".topbar");
+      if (!tb) return;
+      tb.classList.toggle("scrolled", screen.scrollTop > 10);
     },
     { passive: true }
   );
@@ -938,10 +1012,8 @@ document.querySelectorAll(".screen").forEach((screen) => {
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 renderToday();
-
-// spin animation injected via style
 const _style = document.createElement("style");
-_style.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
+_style.textContent = "@keyframes spin{to{transform:rotate(360deg)}}";
 document.head.appendChild(_style);
 
 if ("serviceWorker" in navigator) {

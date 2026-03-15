@@ -1,8 +1,8 @@
-const CACHE = "wordie-v1";
+const CACHE = "wordie-v3";
 const ASSETS = [
-  "/wordie/",
-  "/wordie/index.html",
-  "/wordie/manifest.json",
+  "/",
+  "/index.html",
+  "/manifest.json",
   "https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300;1,500&family=DM+Sans:wght@300;400;500;600&display=swap",
 ];
 
@@ -29,12 +29,10 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Dictionary API — network only, no caching
   if (e.request.url.includes("dictionaryapi.dev")) {
     e.respondWith(fetch(e.request));
     return;
   }
-  // Google Fonts — network first, fallback to cache
   if (
     e.request.url.includes("fonts.googleapis") ||
     e.request.url.includes("fonts.gstatic")
@@ -50,7 +48,6 @@ self.addEventListener("fetch", (e) => {
     );
     return;
   }
-  // App shell — cache first
   e.respondWith(
     caches.match(e.request).then(
       (cached) =>
