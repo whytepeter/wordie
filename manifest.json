@@ -2,7 +2,7 @@
   "name": "Wordie \u2014 Word Journal",
   "short_name": "Wordie",
   "description": "Your daily vocabulary journal.",
-  "start_url": "/",
+  "start_url": "/wordie/",
   "display": "standalone",
   "background_color": "#0D0B1A",
   "theme_color": "#0D0B1A",
