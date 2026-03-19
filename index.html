@@ -466,6 +466,41 @@
         </div>
       </div>
 
+      <div class="settings-section" id="installSection" style="display: none">
+        <div class="settings-label">Install</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M12 2v13M8 11l4 4 4-4" />
+                  <path d="M20 21H4" />
+                </svg>
+              </div>
+              <div>
+                <div class="settings-row-title">Add to home screen</div>
+                <div class="settings-row-sub">
+                  Install Wordie on your device
+                </div>
+              </div>
+            </div>
+            <button
+              class="settings-update-btn"
+              id="installBtn"
+              onclick="triggerInstall()"
+            >
+              Install
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="settings-section">
         <div class="settings-label">About</div>
         <div class="settings-card">
@@ -561,6 +596,61 @@
         <button class="onboard-btn" onclick="dismissOnboarding()">
           Get started
         </button>
+      </div>
+    </div>
+
+    <!-- iOS INSTALL SHEET -->
+    <div class="sheet" id="iosInstallSheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">Add to <em>home screen</em></div>
+        <button class="sheet-close" onclick="closeIosSheet()">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="sheet-body" style="padding-bottom: 32px">
+        <div class="ios-install-steps">
+          <div class="ios-step">
+            <div class="ios-step-num">1</div>
+            <div class="ios-step-text">
+              Tap the <strong>Share</strong> button
+              <svg
+                class="ios-share-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              at the bottom of Safari
+            </div>
+          </div>
+          <div class="ios-step">
+            <div class="ios-step-num">2</div>
+            <div class="ios-step-text">
+              Scroll down and tap <strong>Add to Home Screen</strong>
+            </div>
+          </div>
+          <div class="ios-step">
+            <div class="ios-step-num">3</div>
+            <div class="ios-step-text">
+              Tap <strong>Add</strong> in the top right corner
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

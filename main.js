@@ -83,6 +83,7 @@ function openSheet() {
 function closeAllSheets() {
   closeSheet();
   closeSettingsSheet();
+  closeIosSheet();
 }
 
 function closeSheet() {
@@ -350,6 +351,15 @@ function renderLibrary() {
   showFab();
 }
 
+function clearSearch() {
+  const inp = document.getElementById("searchInput");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+  }
+  renderLibrary();
+}
+
 function dateLabel(ds) {
   const t = todayKey();
   const y = new Date();
@@ -370,24 +380,27 @@ function toggleCard(cardEl) {
   const body = cardEl.querySelector(".card-body");
   const arrow = cardEl.querySelector(".card-arrow");
   if (!body) return;
-
   const isOpen = body.classList.contains("card-body-open");
-  const scope = cardEl.closest(".screen") || document;
-  scope.querySelectorAll(".card-body-open").forEach((el) => {
-    el.classList.remove("card-body-open");
-    const openCard = el.closest(".wcard");
-    const openArrow = openCard?.querySelector(".card-arrow");
-    if (openArrow) openArrow.style.transform = "rotate(0deg)";
-  });
-
+  // Close other open cards within the same screen only
+  const screen = cardEl.closest(".screen");
+  if (screen) {
+    screen.querySelectorAll(".card-body-open").forEach((el) => {
+      if (el === body) return;
+      el.classList.remove("card-body-open");
+      const oArrow = el.closest(".wcard")?.querySelector(".card-arrow");
+      if (oArrow) oArrow.style.transform = "rotate(0deg)";
+    });
+  }
   if (!isOpen) {
     body.classList.add("card-body-open");
     if (arrow) arrow.style.transform = "rotate(180deg)";
+  } else {
+    body.classList.remove("card-body-open");
+    if (arrow) arrow.style.transform = "rotate(0deg)";
   }
 }
 
-let _didSwipeMove = false;
-
+let _didSwipe = false;
 function handleCardTap(e, id) {
   if (
     e.target.closest(".audio-btn") ||
@@ -430,14 +443,10 @@ function buildCard(w, showDel) {
         </div>
         <div class="wcard-actions">
           <div class="wcard-date">${dateLabel(w.date)}</div>
-          <div class="card-arrow" id="card-arrow-${
-            w.id
-          }"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="card-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
         </div>
       </div>
-      <div class="card-body" id="card-body-${
-        w.id
-      }" onclick="event.stopPropagation()">
+      <div class="card-body" onclick="event.stopPropagation()">
         <div class="wcard-meanings">
           ${w.meanings
             .map(
@@ -723,7 +732,8 @@ function rateWord(rating) {
 let swipeStartX = 0,
   swipeStartY = 0,
   swipingCard = null,
-  swipeOpen = null;
+  swipeOpen = null,
+  _didSwipeMove = false;
 const SWIPE_THRESHOLD = 55,
   DELETE_BTN_W = 72;
 
@@ -752,7 +762,6 @@ document.addEventListener(
     const dy = e.touches[0].clientY - swipeStartY;
     if (Math.abs(dy) > Math.abs(dx) + 8) {
       swipingCard = null;
-      _didSwipeMove = false;
       return;
     }
     if (Math.abs(dx) > 8) {
@@ -785,27 +794,24 @@ document.addEventListener(
     swipingCard = null;
 
     if (!_didSwipeMove) {
-      // Pure tap — let onclick handle it
+      // Pure tap — let onclick handle it, just return
       return;
     }
 
-    // Was a real swipe — animate to final position
+    // Was a swipe
     card.style.transition = "transform 0.22s cubic-bezier(.4,0,.2,1)";
     if (dx < -SWIPE_THRESHOLD) {
       card.style.transform = `translateX(-${DELETE_BTN_W}px)`;
       swipeOpen = card;
     } else {
-      // Swipe didn't cross threshold — snap back and treat as a tap
       card.style.transform = "translateX(0)";
       if (swipeOpen === card) swipeOpen = null;
       const wrap = card.closest(".swipe-wrap");
       if (wrap) setTimeout(() => wrap.classList.remove("swiping"), 220);
-      // Reset flag so the click event that follows is treated as a real tap
-      _didSwipeMove = false;
     }
-
     setTimeout(() => {
       card.style.transition = "";
+      _didSwipeMove = false;
     }, 350);
   },
   { passive: true }
@@ -1027,6 +1033,64 @@ document.querySelectorAll(".screen").forEach((screen) => {
     { passive: true }
   );
 });
+
+// ── INSTALL ────────────────────────────────────────────────────────────────
+let _installPrompt = null;
+
+// Capture the install prompt (Android/Chrome)
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  _installPrompt = e;
+  showInstallSection();
+});
+
+// Check if already installed
+function isInstalled() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function showInstallSection() {
+  const sec = document.getElementById("installSection");
+  if (sec) sec.style.display = "block";
+}
+
+function triggerInstall() {
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (_installPrompt) {
+    // Android / Chrome — native prompt
+    _installPrompt.prompt();
+    _installPrompt.userChoice.then((choice) => {
+      if (choice.outcome === "accepted") {
+        const sec = document.getElementById("installSection");
+        if (sec) sec.style.display = "none";
+        showToast("Wordie installed!");
+      }
+      _installPrompt = null;
+    });
+  } else if (isIos) {
+    // iOS — show instructions sheet
+    openIosSheet();
+  } else {
+    showToast("Open in Chrome or Safari to install");
+  }
+}
+
+function openIosSheet() {
+  document.getElementById("iosInstallSheet").classList.add("open");
+  document.getElementById("modalOverlay").classList.add("open");
+}
+function closeIosSheet() {
+  document.getElementById("iosInstallSheet").classList.remove("open");
+  document.getElementById("modalOverlay").classList.remove("open");
+}
+
+// Show install button on iOS if not installed
+if (!isInstalled() && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
+  showInstallSection();
+}
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 renderToday();

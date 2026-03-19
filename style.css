@@ -499,10 +499,9 @@ body.light .topbar.scrolled {
   position: relative;
   border-radius: 18px;
   background: transparent;
-  overflow: visible;
+  overflow: hidden;
 }
 .swipe-wrap.swiping {
-  overflow: hidden;
   background: var(--coral);
 }
 .swipe-del-btn {
@@ -1818,4 +1817,49 @@ body.light {
 /* ── UTILS ────────────────────────────────── */
 .mt8 {
   margin-top: 8px;
+}
+
+/* ── INSTALL / IOS SHEET ──────────────────── */
+.ios-install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+.ios-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.ios-step-num {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: var(--vsoft);
+  color: var(--violet);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.ios-step-text {
+  font-size: 14px;
+  color: var(--t2);
+  line-height: 1.55;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ios-step-text strong {
+  color: var(--t1);
+}
+.ios-share-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--violet);
+  flex-shrink: 0;
 }
