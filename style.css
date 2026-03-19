@@ -837,6 +837,7 @@ body.light .topbar.scrolled {
   transform: translateX(-50%) translateY(102%);
   width: 100%;
   max-width: 430px;
+  max-height: 92vh;
   background: var(--s1);
   border-radius: 26px 26px 0 0;
   border-top: 1px solid rgba(139, 127, 250, 0.2);
@@ -844,8 +845,12 @@ body.light .topbar.scrolled {
   border-right: 1px solid var(--border);
   z-index: 201;
   padding-bottom: calc(28px + var(--safe));
+  overflow-y: auto;
   transition: transform 0.3s cubic-bezier(0.32, 0, 0.67, 0);
   will-change: transform;
+}
+.sheet::-webkit-scrollbar {
+  width: 0;
 }
 .sheet.open {
   transform: translateX(-50%) translateY(0);

@@ -958,18 +958,28 @@ function checkForUpdate() {
     }, 700);
   }
   if (!("serviceWorker" in navigator)) {
-    showToast("No service worker");
+    // No SW support — just hard reload
+    showToast("Reloading…");
+    setTimeout(() => location.reload(true), 800);
     return;
   }
-  navigator.serviceWorker.getRegistration().then((reg) => {
-    if (!reg) {
-      showToast("Not installed as PWA yet");
-      return;
+  // Unregister all service workers then reload
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    if (regs.length) {
+      Promise.all(regs.map((r) => r.unregister())).then(() => {
+        showToast("Updated! Reloading…");
+        setTimeout(() => location.reload(true), 1200);
+      });
+    } else {
+      // No SW registered yet — clear caches and reload anyway
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .finally(() => {
+          showToast("Reloading…");
+          setTimeout(() => location.reload(true), 800);
+        });
     }
-    reg.unregister().then(() => {
-      showToast("Updated! Reloading…");
-      setTimeout(() => location.reload(true), 1200);
-    });
   });
 }
 
@@ -1087,8 +1097,8 @@ function closeIosSheet() {
   document.getElementById("modalOverlay").classList.remove("open");
 }
 
-// Show install button on iOS if not installed
-if (!isInstalled() && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
+// Show install button if not already installed
+if (!isInstalled()) {
   showInstallSection();
 }
 
