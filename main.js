@@ -115,7 +115,7 @@ if (window.visualViewport) {
   });
 }
 
-document.getElementById("wordInput").addEventListener("keydown", (e) => {
+document.getElementById("wordInput")?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") addWord();
 });
 
@@ -1038,21 +1038,21 @@ function importCSV(e) {
           id: Date.now() + Math.random(),
           word,
           phonetic: cols[1] || "",
-          audio: "",
+          audio: cols[2] || "",
           meanings: [],
-          date: cols[5] || todayKey(),
+          date: cols[6] || todayKey(),
           color: COLORS[Math.floor(Math.random() * COLORS.length)],
-          ratings: cols[6] ? [cols[6]] : [],
+          ratings: cols[7] ? [cols[7]] : [],
           lastStudied: 0,
         };
         imported++;
       }
       // Add meaning for this row
-      if (cols[2] && cols[3]) {
+      if (cols[3] && cols[4]) {
         wordMap[word].meanings.push({
-          pos: cols[2],
-          def: cols[3],
-          ex: cols[4] || null,
+          pos: cols[3],
+          def: cols[4],
+          ex: cols[5] || null,
         });
       }
     });
@@ -1091,13 +1091,14 @@ function exportCSV() {
     return;
   }
   const header =
-    "Word,Phonetic,Part of Speech,Definition,Example,Date Added,Last Rating";
+    "Word,Phonetic,Audio,Part of Speech,Definition,Example,Date Added,Last Rating";
   const rows = words.map((w) => {
     const m = w.meanings[0] || {};
     const esc = (s) => `"${(s || "").replace(/"/g, '""')}"`;
     return [
       esc(w.word),
       esc(w.phonetic),
+      esc(w.audio),
       esc(m.pos),
       esc(m.def),
       esc(m.ex),

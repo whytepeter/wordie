@@ -71,6 +71,16 @@ body {
   width: 0;
 }
 
+/* Hide scrollbars globally — keep scroll behaviour, lose the bar */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;
