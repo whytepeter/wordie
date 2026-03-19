@@ -837,20 +837,19 @@ body.light .topbar.scrolled {
   transform: translateX(-50%) translateY(102%);
   width: 100%;
   max-width: 430px;
-  max-height: 92vh;
+  /* Leave breathing room at top — never reaches the very tip */
+  max-height: 82vh;
   background: var(--s1);
   border-radius: 26px 26px 0 0;
   border-top: 1px solid rgba(139, 127, 250, 0.2);
   border-left: 1px solid var(--border);
   border-right: 1px solid var(--border);
   z-index: 201;
-  padding-bottom: calc(28px + var(--safe));
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.32, 0, 0.67, 0);
   will-change: transform;
-}
-.sheet::-webkit-scrollbar {
-  width: 0;
 }
 .sheet.open {
   transform: translateX(-50%) translateY(0);
@@ -859,10 +858,27 @@ body.light .topbar.scrolled {
 /* Keyboard-aware: lift sheet above keyboard on iOS */
 .sheet.keyboard-up {
   transform: translateX(-50%) translateY(0);
-  padding-bottom: max(
-    calc(28px + var(--safe)),
-    env(keyboard-inset-height, 0px)
-  );
+}
+
+/* Sticky handle + header */
+.sheet-sticky {
+  flex-shrink: 0;
+  background: var(--s1);
+  border-radius: 26px 26px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Scrollable content area */
+.sheet-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(28px + var(--safe));
+}
+.sheet-scroll::-webkit-scrollbar {
+  width: 0;
 }
 
 .sheet-handle {
@@ -870,13 +886,13 @@ body.light .topbar.scrolled {
   height: 4px;
   border-radius: 2px;
   background: var(--s4);
-  margin: 12px auto 0;
+  margin: 12px auto 8px;
 }
 .sheet-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 22px 12px;
+  padding: 8px 22px 14px;
 }
 .sheet-title {
   font-family: "Fraunces", serif;
