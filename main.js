@@ -983,6 +983,107 @@ function checkForUpdate() {
   });
 }
 
+// ── IMPORT CSV ─────────────────────────────────────────────────────────────
+function importCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const lines = ev.target.result
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length < 2) {
+      showToast("CSV appears empty");
+      return;
+    }
+
+    // Parse rows — handle quoted fields
+    function parseRow(line) {
+      const result = [];
+      let cur = "",
+        inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          inQ = !inQ;
+        } else if (c === "," && !inQ) {
+          result.push(cur);
+          cur = "";
+        } else cur += c;
+      }
+      result.push(cur);
+      return result.map((s) => s.trim());
+    }
+
+    // Skip header row
+    const rows = lines.slice(1);
+    let imported = 0,
+      skipped = 0;
+    const wordMap = {};
+
+    rows.forEach((line) => {
+      const cols = parseRow(line);
+      // CSV columns: Word, Phonetic, POS, Definition, Example, Date, LastRating
+      const word = cols[0]?.toLowerCase().trim();
+      if (!word) return;
+
+      if (!wordMap[word]) {
+        // Check not already in library
+        if (words.find((w) => w.word === word)) {
+          skipped++;
+          return;
+        }
+        wordMap[word] = {
+          id: Date.now() + Math.random(),
+          word,
+          phonetic: cols[1] || "",
+          audio: "",
+          meanings: [],
+          date: cols[5] || todayKey(),
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          ratings: cols[6] ? [cols[6]] : [],
+          lastStudied: 0,
+        };
+        imported++;
+      }
+      // Add meaning for this row
+      if (cols[2] && cols[3]) {
+        wordMap[word].meanings.push({
+          pos: cols[2],
+          def: cols[3],
+          ex: cols[4] || null,
+        });
+      }
+    });
+
+    const newWords = Object.values(wordMap);
+    if (!newWords.length) {
+      showToast(
+        skipped
+          ? `All ${skipped} words already in library`
+          : "Nothing to import"
+      );
+      return;
+    }
+
+    // Prepend imported words
+    words = [...newWords, ...words];
+    save();
+    if (activeTab === "today") renderToday();
+    if (activeTab === "library") renderLibrary();
+    if (activeTab === "study") renderStudyHome();
+    showToast(
+      `Imported ${imported} word${imported !== 1 ? "s" : ""}${
+        skipped ? `, ${skipped} skipped` : ""
+      }`
+    );
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be re-imported
+  e.target.value = "";
+}
+
 // ── EXPORT CSV ─────────────────────────────────────────────────────────────
 function exportCSV() {
   if (!words.length) {
