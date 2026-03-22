@@ -1,427 +1,742 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <meta name="theme-color" content="#0D0B1A"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Wordie"/>
-  <meta name="description" content="Your daily word journal"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"/>
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="icon-180.png"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png"/>
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png"/>
-  <link rel="shortcut icon" href="favicon.ico"/>
-  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css"/>
-  <title>Wordie</title>
-</head>
-<body>
-<div id="app">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <meta name="theme-color" content="#0D0B1A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Wordie" />
+    <meta name="description" content="Your daily word journal" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="180x180"
+      href="icon-180.png"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300;1,500&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
 
-  <!-- TODAY SCREEN -->
-  <div class="screen active" id="screen-today">
-    <div class="topbar">
-      <div class="app-label">Wordie</div>
-      <div class="topbar-row">
-        <div class="page-title">Today's <em>words</em></div>
-        <div class="streak-pill">
-          <svg class="bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          <span id="streakCount">0</span>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script
+      async
+      src="https://plausible.io/js/pa-8rxg18RI07YyQjM7p7utl.js"
+    ></script>
+    <script>
+      (window.plausible =
+        window.plausible ||
+        function () {
+          (plausible.q = plausible.q || []).push(arguments);
+        }),
+        (plausible.init =
+          plausible.init ||
+          function (i) {
+            plausible.o = i || {};
+          });
+      plausible.init();
+    </script>
+    <title>Wordie</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- TODAY SCREEN -->
+      <div class="screen active" id="screen-today">
+        <div class="topbar">
+          <div class="app-label">Wordie</div>
+          <div class="topbar-row">
+            <div class="page-title">Today's <em>words</em></div>
+            <div class="streak-pill">
+              <svg
+                class="bolt"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              >
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+              <span id="streakCount">0</span>
+            </div>
+          </div>
+        </div>
+        <div id="todayContent"></div>
+      </div>
+
+      <!-- LIBRARY SCREEN -->
+      <div class="screen" id="screen-library">
+        <div class="topbar">
+          <div class="app-label">Wordie</div>
+          <div class="topbar-row">
+            <div class="page-title">Your <em>library</em></div>
+            <button
+              class="search-toggle-btn"
+              id="searchToggleBtn"
+              onclick="toggleSearch()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </button>
+          </div>
+          <div class="search-wrap" id="searchWrap">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              class="search-input"
+              id="searchInput"
+              type="text"
+              placeholder="Search words…"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              oninput="renderLibrary()"
+            />
+            <button
+              class="search-clear-btn"
+              id="searchClearBtn"
+              onclick="clearSearch()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="libraryContent"></div>
+      </div>
+
+      <!-- STUDY SCREEN -->
+      <div class="screen" id="screen-study">
+        <div class="topbar">
+          <div class="app-label">Wordie</div>
+          <div class="page-title"><em>Study</em> mode</div>
+        </div>
+        <div id="studyContent"></div>
+      </div>
+
+      <!-- TAB BAR -->
+      <nav class="tabbar">
+        <div
+          class="tab-item active"
+          id="tab-today"
+          onclick="switchTab('today')"
+        >
+          <div class="tab-indicator"></div>
+          <div class="tab-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="3" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+              <circle
+                cx="12"
+                cy="16"
+                r="1.5"
+                fill="currentColor"
+                stroke="none"
+              />
+            </svg>
+          </div>
+          <span class="tab-label">Today</span>
+        </div>
+        <div class="tab-item" id="tab-library" onclick="switchTab('library')">
+          <div class="tab-indicator"></div>
+          <div class="tab-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 19V6a2 2 0 012-2h13" />
+              <path d="M4 19a2 2 0 002 2h13V4" />
+              <path d="M9 10h6M9 14h4" />
+            </svg>
+          </div>
+          <span class="tab-label">Library</span>
+        </div>
+        <div class="tab-item" id="tab-study" onclick="switchTab('study')">
+          <div class="tab-indicator"></div>
+          <div class="tab-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="5" width="20" height="14" rx="3" />
+              <path d="M12 5v14M2 12h20" />
+            </svg>
+          </div>
+          <span class="tab-label">Study</span>
+        </div>
+        <div class="tab-item" id="tab-settings" onclick="openSettingsSheet()">
+          <div class="tab-indicator"></div>
+          <div class="tab-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+              />
+            </svg>
+          </div>
+          <span class="tab-label">Settings</span>
+        </div>
+      </nav>
+    </div>
+
+    <!-- MODAL OVERLAY -->
+    <div
+      class="modal-overlay"
+      id="modalOverlay"
+      onclick="closeAllSheets()"
+    ></div>
+
+    <!-- ADD WORD BOTTOM SHEET -->
+    <div class="sheet" id="addSheet">
+      <div class="sheet-sticky">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">Add a <em>word</em></div>
+          <button class="sheet-close" onclick="closeSheet()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="sheet-scroll">
+        <div class="sheet-body">
+          <div class="word-input-wrap">
+            <input
+              class="word-input"
+              id="wordInput"
+              type="text"
+              placeholder="e.g. ephemeral"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+            <button class="sheet-add-btn" id="addBtn" onclick="addWord()">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+          <div class="fetch-status" id="fetchStatus"></div>
         </div>
       </div>
     </div>
-    <div id="todayContent"></div>
-  </div>
 
-  <!-- LIBRARY SCREEN -->
-  <div class="screen" id="screen-library">
-    <div class="topbar">
-      <div class="app-label">Wordie</div>
-      <div class="topbar-row">
-        <div class="page-title">Your <em>library</em></div>
-        <button class="search-toggle-btn" id="searchToggleBtn" onclick="toggleSearch()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-          </svg>
+    <!-- SETTINGS BOTTOM SHEET -->
+    <div class="sheet" id="settingsSheet">
+      <div class="sheet-sticky">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title"><em>Settings</em></div>
+          <button class="sheet-close" onclick="closeSettingsSheet()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="sheet-scroll">
+        <div class="settings-section">
+          <div class="settings-label">Daily goal</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Words per day</div>
+                  <div class="settings-row-sub">Target to hit each day</div>
+                </div>
+              </div>
+              <div class="goal-options">
+                <button class="theme-opt" id="goal-3" onclick="setGoal(3)">
+                  3
+                </button>
+                <button class="theme-opt" id="goal-5" onclick="setGoal(5)">
+                  5
+                </button>
+                <button class="theme-opt" id="goal-10" onclick="setGoal(10)">
+                  10
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Appearance</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path
+                      d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Theme</div>
+                  <div class="settings-row-sub">Choose your preferred look</div>
+                </div>
+              </div>
+              <div class="theme-options">
+                <button
+                  class="theme-opt"
+                  id="theme-light"
+                  onclick="setTheme('light')"
+                >
+                  Light
+                </button>
+                <button
+                  class="theme-opt"
+                  id="theme-dark"
+                  onclick="setTheme('dark')"
+                >
+                  Dark
+                </button>
+                <button
+                  class="theme-opt"
+                  id="theme-system"
+                  onclick="setTheme('system')"
+                >
+                  Auto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Data</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Export words</div>
+                  <div class="settings-row-sub">Download as CSV</div>
+                </div>
+              </div>
+              <button class="settings-update-btn" onclick="exportCSV()">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export
+              </button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 15 12 10 17 15" />
+                    <line x1="12" y1="10" x2="12" y2="22" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Import words</div>
+                  <div class="settings-row-sub">Restore from a CSV file</div>
+                </div>
+              </div>
+              <button
+                class="settings-update-btn"
+                onclick="document.getElementById('importFileInput').click()"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 15 12 10 17 15" />
+                  <line x1="12" y1="10" x2="12" y2="22" />
+                </svg>
+                Import
+              </button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path
+                      d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Check for updates</div>
+                  <div class="settings-row-sub">Reload with latest version</div>
+                </div>
+              </div>
+              <button
+                class="settings-update-btn"
+                id="updateBtn"
+                onclick="checkForUpdate()"
+              >
+                <span
+                  id="updateIcon"
+                  style="display: flex; align-items: center"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path
+                      d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"
+                    />
+                  </svg>
+                </span>
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section" id="installSection" style="display: none">
+          <div class="settings-label">Install</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-left">
+                <div class="settings-row-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path d="M12 2v13M8 11l4 4 4-4" />
+                    <path d="M20 21H4" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-row-title">Add to home screen</div>
+                  <div class="settings-row-sub">
+                    Install Wordie on your device
+                  </div>
+                </div>
+              </div>
+              <button
+                class="settings-update-btn"
+                id="installBtn"
+                onclick="triggerInstall()"
+              >
+                Install
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">About</div>
+          <div class="settings-card">
+            <div class="settings-row" style="justify-content: center">
+              <div style="text-align: center">
+                <div
+                  style="
+                    font-family: 'Fraunces', serif;
+                    font-size: 18px;
+                    font-style: italic;
+                    color: var(--violet);
+                  "
+                >
+                  Wordie
+                </div>
+                <div style="font-size: 12px; color: var(--t3); margin-top: 2px">
+                  Your daily word journal · v1.0
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ONBOARDING OVERLAY -->
+    <div class="onboard-overlay" id="onboardOverlay">
+      <div class="onboard-card">
+        <img src="icon-180.png" class="onboard-logo-img" alt="Wordie" />
+        <div class="onboard-title">Welcome to <em>Wordie</em></div>
+        <div class="onboard-sub">Build your vocabulary one word at a time.</div>
+        <div class="onboard-steps">
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Add a word</div>
+              <div class="onboard-step-sub">
+                Tap + and type any English word. We fetch the definition
+                automatically.
+              </div>
+            </div>
+          </div>
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Expand to learn</div>
+              <div class="onboard-step-sub">
+                Tap any card to reveal its meaning, examples and pronunciation.
+              </div>
+            </div>
+          </div>
+          <div class="onboard-step">
+            <div class="onboard-step-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="3" />
+                <path d="M12 5v14M2 12h20" />
+              </svg>
+            </div>
+            <div>
+              <div class="onboard-step-title">Study and rate</div>
+              <div class="onboard-step-sub">
+                Start a study session, flip cards and mark each word Easy, Fuzzy
+                or Blank.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="onboard-btn" onclick="dismissOnboarding()">
+          Get started
         </button>
       </div>
-      <div class="search-wrap" id="searchWrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <input class="search-input" id="searchInput" type="text" placeholder="Search words…"
-          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
-          oninput="renderLibrary()"/>
-        <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
     </div>
-    <div id="libraryContent"></div>
-  </div>
 
-  <!-- STUDY SCREEN -->
-  <div class="screen" id="screen-study">
-    <div class="topbar">
-      <div class="app-label">Wordie</div>
-      <div class="page-title"><em>Study</em> mode</div>
-    </div>
-    <div id="studyContent"></div>
-  </div>
-
-  <!-- TAB BAR -->
-  <nav class="tabbar">
-    <div class="tab-item active" id="tab-today" onclick="switchTab('today')">
-      <div class="tab-indicator"></div>
-      <div class="tab-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="3"/>
-          <path d="M16 2v4M8 2v4M3 10h18"/>
-          <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-        </svg>
-      </div>
-      <span class="tab-label">Today</span>
-    </div>
-    <div class="tab-item" id="tab-library" onclick="switchTab('library')">
-      <div class="tab-indicator"></div>
-      <div class="tab-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19V6a2 2 0 012-2h13"/>
-          <path d="M4 19a2 2 0 002 2h13V4"/>
-          <path d="M9 10h6M9 14h4"/>
-        </svg>
-      </div>
-      <span class="tab-label">Library</span>
-    </div>
-    <div class="tab-item" id="tab-study" onclick="switchTab('study')">
-      <div class="tab-indicator"></div>
-      <div class="tab-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="5" width="20" height="14" rx="3"/>
-          <path d="M12 5v14M2 12h20"/>
-        </svg>
-      </div>
-      <span class="tab-label">Study</span>
-    </div>
-    <div class="tab-item" id="tab-settings" onclick="openSettingsSheet()">
-      <div class="tab-indicator"></div>
-      <div class="tab-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-      </div>
-      <span class="tab-label">Settings</span>
-    </div>
-  </nav>
-</div>
-
-<!-- MODAL OVERLAY -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeAllSheets()"></div>
-
-<!-- ADD WORD BOTTOM SHEET -->
-<div class="sheet" id="addSheet">
-  <div class="sheet-sticky">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <div class="sheet-title">Add a <em>word</em></div>
-      <button class="sheet-close" onclick="closeSheet()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div class="sheet-scroll">
-  <div class="sheet-body">
-    <div class="word-input-wrap">
-      <input
-        class="word-input"
-        id="wordInput"
-        type="text"
-        placeholder="e.g. ephemeral"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="none"
-        spellcheck="false"
-      />
-      <button class="sheet-add-btn" id="addBtn" onclick="addWord()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-      </button>
-    </div>
-    <div class="fetch-status" id="fetchStatus"></div>
-  </div>
-  </div>
-</div>
-
-<!-- SETTINGS BOTTOM SHEET -->
-<div class="sheet" id="settingsSheet">
-  <div class="sheet-sticky">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <div class="sheet-title"><em>Settings</em></div>
-      <button class="sheet-close" onclick="closeSettingsSheet()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div class="sheet-scroll">
-
-  <div class="settings-section">
-    <div class="settings-label">Daily goal</div>
-    <div class="settings-card">
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    <!-- iOS INSTALL SHEET -->
+    <div class="sheet" id="iosInstallSheet">
+      <div class="sheet-sticky">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">Add to <em>home screen</em></div>
+          <button class="sheet-close" onclick="closeIosSheet()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
             </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Words per day</div>
-            <div class="settings-row-sub">Target to hit each day</div>
-          </div>
+          </button>
         </div>
-        <div class="goal-options">
-          <button class="theme-opt" id="goal-3"  onclick="setGoal(3)">3</button>
-          <button class="theme-opt" id="goal-5"  onclick="setGoal(5)">5</button>
-          <button class="theme-opt" id="goal-10" onclick="setGoal(10)">10</button>
+      </div>
+      <div class="sheet-scroll">
+        <div class="sheet-body" style="padding-bottom: 32px">
+          <div class="ios-install-steps">
+            <div class="ios-step">
+              <div class="ios-step-num">1</div>
+              <div class="ios-step-text">
+                Tap the <strong>Share</strong> button
+                <svg
+                  class="ios-share-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+                at the bottom of Safari
+              </div>
+            </div>
+            <div class="ios-step">
+              <div class="ios-step-num">2</div>
+              <div class="ios-step-text">
+                Scroll down and tap <strong>Add to Home Screen</strong>
+              </div>
+            </div>
+            <div class="ios-step">
+              <div class="ios-step-num">3</div>
+              <div class="ios-step-text">
+                Tap <strong>Add</strong> in the top right corner
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="settings-section">
-    <div class="settings-label">Appearance</div>
-    <div class="settings-card">
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <circle cx="12" cy="12" r="4"/>
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-            </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Theme</div>
-            <div class="settings-row-sub">Choose your preferred look</div>
-          </div>
-        </div>
-        <div class="theme-options">
-          <button class="theme-opt" id="theme-light"  onclick="setTheme('light')">Light</button>
-          <button class="theme-opt" id="theme-dark"   onclick="setTheme('dark')">Dark</button>
-          <button class="theme-opt" id="theme-system" onclick="setTheme('system')">Auto</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- HIDDEN FILE INPUT FOR IMPORT -->
+    <input
+      type="file"
+      id="importFileInput"
+      accept=".csv"
+      style="display: none"
+      onchange="importCSV(event)"
+    />
 
-  <div class="settings-section">
-    <div class="settings-label">Data</div>
-    <div class="settings-card">
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Export words</div>
-            <div class="settings-row-sub">Download as CSV</div>
-          </div>
-        </div>
-        <button class="settings-update-btn" onclick="exportCSV()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Export
-        </button>
-      </div>
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 15 12 10 17 15"/>
-              <line x1="12" y1="10" x2="12" y2="22"/>
-            </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Import words</div>
-            <div class="settings-row-sub">Restore from a CSV file</div>
-          </div>
-        </div>
-        <button class="settings-update-btn" onclick="document.getElementById('importFileInput').click()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="7 15 12 10 17 15"/>
-            <line x1="12" y1="10" x2="12" y2="22"/>
-          </svg>
-          Import
-        </button>
-      </div>
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
-            </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Check for updates</div>
-            <div class="settings-row-sub">Reload with latest version</div>
-          </div>
-        </div>
-        <button class="settings-update-btn" id="updateBtn" onclick="checkForUpdate()">
-          <span id="updateIcon" style="display:flex;align-items:center;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"/>
-            </svg>
-          </span>
-          Update
-        </button>
-      </div>
-    </div>
-  </div>
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
 
-  <div class="settings-section" id="installSection" style="display:none">
-    <div class="settings-label">Install</div>
-    <div class="settings-card">
-      <div class="settings-row">
-        <div class="settings-row-left">
-          <div class="settings-row-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M12 2v13M8 11l4 4 4-4"/><path d="M20 21H4"/>
-            </svg>
-          </div>
-          <div>
-            <div class="settings-row-title">Add to home screen</div>
-            <div class="settings-row-sub">Install Wordie on your device</div>
-          </div>
-        </div>
-        <button class="settings-update-btn" id="installBtn" onclick="triggerInstall()">Install</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-label">About</div>
-    <div class="settings-card">
-      <div class="settings-row" style="justify-content:center;">
-        <div style="text-align:center;">
-          <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--violet);">Wordie</div>
-          <div style="font-size:12px;color:var(--t3);margin-top:2px;">Your daily word journal · v1.0</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  </div>
-</div>
-
-<!-- ONBOARDING OVERLAY -->
-<div class="onboard-overlay" id="onboardOverlay">
-  <div class="onboard-card">
-    <img src="icon-180.png" class="onboard-logo-img" alt="Wordie"/>
-    <div class="onboard-title">Welcome to <em>Wordie</em></div>
-    <div class="onboard-sub">Build your vocabulary one word at a time.</div>
-    <div class="onboard-steps">
-      <div class="onboard-step">
-        <div class="onboard-step-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        </div>
-        <div>
-          <div class="onboard-step-title">Add a word</div>
-          <div class="onboard-step-sub">Tap + and type any English word. We fetch the definition automatically.</div>
-        </div>
-      </div>
-      <div class="onboard-step">
-        <div class="onboard-step-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-        </div>
-        <div>
-          <div class="onboard-step-title">Expand to learn</div>
-          <div class="onboard-step-sub">Tap any card to reveal its meaning, examples and pronunciation.</div>
-        </div>
-      </div>
-      <div class="onboard-step">
-        <div class="onboard-step-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M12 5v14M2 12h20"/></svg>
-        </div>
-        <div>
-          <div class="onboard-step-title">Study and rate</div>
-          <div class="onboard-step-sub">Start a study session, flip cards and mark each word Easy, Fuzzy or Blank.</div>
-        </div>
-      </div>
-    </div>
-    <button class="onboard-btn" onclick="dismissOnboarding()">Get started</button>
-  </div>
-</div>
-
-<!-- iOS INSTALL SHEET -->
-<div class="sheet" id="iosInstallSheet">
-  <div class="sheet-sticky">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <div class="sheet-title">Add to <em>home screen</em></div>
-      <button class="sheet-close" onclick="closeIosSheet()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div class="sheet-scroll">
-  <div class="sheet-body" style="padding-bottom:32px">
-    <div class="ios-install-steps">
-      <div class="ios-step">
-        <div class="ios-step-num">1</div>
-        <div class="ios-step-text">Tap the <strong>Share</strong> button
-          <svg class="ios-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-            <polyline points="16 6 12 2 8 6"/>
-            <line x1="12" y1="2" x2="12" y2="15"/>
-          </svg>
-          at the bottom of Safari
-        </div>
-      </div>
-      <div class="ios-step">
-        <div class="ios-step-num">2</div>
-        <div class="ios-step-text">Scroll down and tap <strong>Add to Home Screen</strong></div>
-      </div>
-      <div class="ios-step">
-        <div class="ios-step-num">3</div>
-        <div class="ios-step-text">Tap <strong>Add</strong> in the top right corner</div>
-      </div>
-    </div>
-  </div>
-  </div>
-</div>
-
-<!-- HIDDEN FILE INPUT FOR IMPORT -->
-<input type="file" id="importFileInput" accept=".csv" style="display:none" onchange="importCSV(event)"/>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<script src="main.js"></script>
-</body>
+    <script src="main.js"></script>
+  </body>
 </html>
